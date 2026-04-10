@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "thread_id": "task_3_webweavece02",
+  "project_root": "../..",
+  "project_root_hint_abs": "D:\\agent\\webpageagent\\WebWeave",
+  "project_root_mode": "relative_to_bridge_dir",
+  "command_base": [
+    "python",
+    "core.py"
+  ],
+  "passthrough_args": [],
+  "flag_defaults": {},
+  "venv_dir": "web",
+  "activation_hint": "web\\Scripts\\activate",
+  "python_interpreter": "",
+  "dashboard_hook_url": ""
+}

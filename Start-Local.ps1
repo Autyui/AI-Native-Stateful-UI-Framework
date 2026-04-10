@@ -71,7 +71,7 @@ Start-Process powershell -ArgumentList @(
 
 Write-Host "Backend and frontend are starting in two new PowerShell windows."
 Write-Host "Backend: http://127.0.0.1:$BackendPort"
-Write-Host "Frontend: http://localhost:3000"
+Write-Host "Frontend: http://localhost:3001"
 if ($DevReload) {
     Write-Host "Mode: DevReload enabled"
 } else {

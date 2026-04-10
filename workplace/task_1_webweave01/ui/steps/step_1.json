@@ -1,0 +1,27 @@
+{
+  "completed_at": "2026-04-10T12:00:51.722200+00:00",
+  "checkpoint_summary": "completed:step_1",
+  "ui_render": {
+    "type": "form",
+    "content": {
+      "title": "Step Review - step_1",
+      "description": "Original label: 快速理解仓库",
+      "fields": [
+        {
+          "name": "refinement_prompt",
+          "label": "Refinement Prompt",
+          "kind": "textarea",
+          "placeholder": "Optional: describe what you want to refine for the next run."
+        },
+        {
+          "name": "notes",
+          "label": "Operator Notes",
+          "kind": "textarea",
+          "placeholder": "Record observations and expected changes."
+        }
+      ]
+    }
+  },
+  "result_text": "content='' additional_kwargs={'refusal': None} response_metadata={'token_usage': {'completion_tokens': 1455, 'prompt_tokens': 327, 'total_tokens': 1782, 'completion_tokens_details': {'accepted_prediction_tokens': None, 'audio_tokens': None, 'reasoning_tokens': 524, 'rejected_prediction_tokens': None}, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 0}}, 'model_provider': 'openai', 'model_name': 'gpt-5.3-codex', 'system_fingerprint': None, 'id': 'resp_0f36f78643367b1e0169d8e645706c8194a026f2809e280ee9', 'finish_reason': 'stop', 'logprobs': None} id='lc_run--019d7743-6917-7ab1-9bee-0ec158524ba7-0' tool_calls=[] invalid_tool_calls=[] usage_metadata={'input_tokens': 327, 'output_tokens': 1455, 'total_tokens': 1782, 'input_token_details': {'cache_read': 0}, 'output_token_details': {'reasoning': 524}}",
+  "artifacts": {}
+}

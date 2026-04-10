@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "is_layered": true,
+  "non_intrusive": true,
+  "pre_run_checklist": [
+    "AIUI is non-intrusive: it only uses .aui-dashboard files and will not modify your project source files.",
+    "Activate environment before run: `web\\Scripts\\activate`.",
+    "Run command from README analysis: `python core.py`.",
+    "Dependencies may be required by README. Ensure install steps are completed manually.",
+    "README appears to require a `resources` directory. Confirm it exists and contains needed input data.",
+    "README references output folder `result`. Confirm output path assumptions before run.",
+    "README references environment variables/.env. Confirm required variables are present."
+  ],
+  "anchor_settings": {
+    "dedupe_window_seconds": 2.0,
+    "similarity_threshold": 0.88,
+    "naming": "step_index_title",
+    "page_size": 8
+  },
+  "status_bar": {
+    "stages": [
+      {
+        "id": "process_starting",
+        "label": "Process Starting",
+        "description": "Bridge has launched the target command.",
+        "anchor_name": "Process Starting",
+        "trigger_keyword": "starting",
+        "match_rules": [
+          {
+            "type": "lifecycle",
+            "event": "starting"
+          }
+        ],
+        "match_patterns": [
+          "\\bstarting\\b"
+        ]
+      },
+      {
+        "id": "first_output",
+        "label": "First Output",
+        "description": "First stdout/stderr output is received from the project.",
+        "anchor_name": "First Output",
+        "trigger_keyword": "stdout",
+        "match_rules": [
+          {
+            "type": "stdio",
+            "stream_regex": "^(stdout|stderr)$",
+            "has_line": true
+          },
+          {
+            "stream_regex": "^(bridge_stdout|bridge_stderr)$",
+            "line_regex": "\\[(stdout|stderr)\\]\\s+"
+          }
+        ],
+        "match_patterns": [
+          "\\[(stdout|stderr)\\]"
+        ]
+      },
+      {
+        "id": "process_exited",
+        "label": "Process Exited",
+        "description": "Target process has exited (success or failure).",
+        "anchor_name": "Process Exited",
+        "trigger_keyword": "exited",
+        "match_rules": [
+          {
+            "type": "lifecycle",
+            "event": "exited"
+          }
+        ],
+        "match_patterns": [
+          "\\bexited\\b"
+        ]
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "interaction_required",
+      "mode": "input",
+      "title": "Input Required",
+      "description": "Terminal is waiting for user input.",
+      "ui_component": "input_prompt"
+    },
+    {
+      "id": "progress_update",
+      "mode": "progress",
+      "title": "Progress Update",
+      "description": "Update progress bar from parsed runtime logs.",
+      "ui_component": "progress_bar"
+    },
+    {
+      "id": "stage_change",
+      "mode": "stage",
+      "title": "Stage Change",
+      "description": "Highlight current stage based on parsed runtime logs.",
+      "ui_component": "stage_pills"
+    },
+    {
+      "id": "error_detected",
+      "mode": "recover",
+      "title": "AI Diagnose",
+      "description": "Suggest auto rollback and retry prompt when runtime errors are detected.",
+      "ui_component": "diagnose_modal"
+    },
+    {
+      "id": "anchors_catalog",
+      "mode": "anchor",
+      "title": "Anchor Catalog",
+      "description": "Display available rollback anchors captured at stage transitions.",
+      "ui_component": "anchor_list"
+    },
+    {
+      "id": "rollback_anchor",
+      "mode": "anchor",
+      "title": "Rollback By Anchor",
+      "description": "Rollback to a selected anchor and replay recorded stdin history.",
+      "ui_component": "anchor_rollback_button"
+    }
+  ],
+  "intent_rules": [
+    {
+      "id": "progress_percent",
+      "regex": "(?i)(?:progress|\\u8fdb\\u5ea6)\\s*[:\\uff1a]?\\s*(\\d{1,3})\\s*%",
+      "emit": {
+        "type": "ui_state",
+        "update": "progress",
+        "progress_group": 1
+      }
+    },
+    {
+      "id": "interaction_required",
+      "regex": "(?i)(enter\\s+password|password\\s*:|\\u8bf7\\u8f93\\u5165|\\u8f93\\u5165\\u5bc6\\u7801|press\\s+enter|wait\\s+for\\s+user|input\\s*:|you\\s*:)",
+      "emit": {
+        "type": "ui_state",
+        "update": "interaction_required",
+        "mode": "input"
+      }
+    },
+    {
+      "id": "error_detected",
+      "regex": "(?i)(traceback|exception|error|failed|fatal|module\\s*not\\s*found|no such file|permission denied)",
+      "emit": {
+        "type": "ui_state",
+        "update": "error_detected",
+        "ask_auto_recover": true
+      }
+    },
+    {
+      "id": "stage_change_process_starting",
+      "regex": "(?i)starting",
+      "emit": {
+        "type": "ui_state",
+        "update": "stage_change",
+        "stage_index": 0,
+        "stage_id": "process_starting",
+        "stage_label": "Process Starting"
+      }
+    },
+    {
+      "id": "stage_change_first_output",
+      "regex": "(?i)stdout",
+      "emit": {
+        "type": "ui_state",
+        "update": "stage_change",
+        "stage_index": 1,
+        "stage_id": "first_output",
+        "stage_label": "First Output"
+      }
+    },
+    {
+      "id": "stage_change_process_exited",
+      "regex": "(?i)exited",
+      "emit": {
+        "type": "ui_state",
+        "update": "stage_change",
+        "stage_index": 2,
+        "stage_id": "process_exited",
+        "stage_label": "Process Exited"
+      }
+    }
+  ],
+  "controls": [],
+  "launch": {
+    "command": "python core.py",
+    "working_dir": ".",
+    "supports_stdin": true
+  }
+}

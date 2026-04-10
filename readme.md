@@ -7,14 +7,14 @@
 AUI-Dashboard 是一个把“项目执行日志”转成“可视化、可交互、可回溯流程”的控制台工具。
 
 你可以把它理解为：
-1. 给 GitHub 仓库或本地项目自动生成执行步骤（Plan/Steps）。
+1. 给 GitHub 仓库或本地项目生成一个UI，显示执行步骤（Plan/Steps）。
 2. 每一步都有状态展示和锚点（Anchor）。
-3. 可以从任意满意锚点回滚并继续执行。
+3. 可以从任意满意的锚点回滚并继续执行。
 4. UI 用轻量 JSON 协议渲染，便于低成本迭代。
 
 ---
-
-## 2. 当前状态（MVP）
+![AIUI_logo](/AIUI_logo.jpg)
+## 2. 当前状态
 
 当前整体完成度约 **90%**，核心能力已可用：
 1. 步骤规划：支持 GitHub URL 与本地目录。
@@ -83,33 +83,23 @@ DEEPSEEK_API_KEY=your_deepseek_api_key
 
 ```powershell
 # 后端
-cd "D:\agent\AI-Native Stateful UI Framework"
+cd "安装盘:\目录\AI-Native Stateful UI Framework"
 .\.venv\Scripts\Activate.ps1
 python -m uvicorn app:app --port 8000
 
 # 前端
-cd "D:\agent\AI-Native Stateful UI Framework\frontend"
+cd "安装盘:\目录\AI-Native Stateful UI Framework\frontend"
 npm run dev
 ```
 
 访问地址：
-1. 前端：`http://localhost:3000`
+1. 前端：`http://localhost:3001`
 2. 后端：`http://127.0.0.1:8000`
 
 ---
 ### 3.4.2 启动项目的UI
 1. 安装依赖项：
-fastapi
-uvicorn[standard]
-pywinpty; platform_system == "Windows"
-langchain
-langgraph
-langchain-openai
-langchain-google-genai
-langchain-deepseek
-langchain-tavily
-python-dotenv
-typing-extensions
+需要在项目的根目录（打开虚拟环境）再次下载AIUI中的requirements
 2. 启动：
 python .aui-dashboard/ui/ui_runner.py
 ## 4. 常用操作
@@ -146,7 +136,7 @@ python ./.aui-dashboard/ui/ui_runner.py
 
 ### 4.5 自定义背景图
 
-1. 模板背景图路径：`bridge_template_assets/assets/bg-custom.jpg`
+1. 模板背景图路径：`frontend/public/assets/bg-custom.jpg`
 2. 运行时背景图路径：`<project>/.aui-dashboard/ui/assets/bg-custom.jpg`
 3. Dashboard 页可直接配置背景 URL 与遮罩透明度（自动保存在浏览器本地）。
 
@@ -188,34 +178,39 @@ python ./.aui-dashboard/ui/ui_runner.py
 
 5. 背景图不显示。  
 排查顺序：
-   - 确认 `ui/assets/bg-custom.jpg` 文件存在。
+   - 确认 `\frontend\public\assets` 下的bg-custom.jpg文件存在。
    - 确认通过 `ui_runner.py` 启动（已挂载 `/assets`）。
    - 检查 `index.html` 的 `--bg-image` 路径是否正确。
 
 6. 日志出现乱码或中英混杂。  
-说明：多来自目标项目本身编码链路；AUI 会尽量展示与高亮，但不强行改写目标项目输出编码。
+说明：多来自目标项目本身编码链路；AUI 会尽量展示与高亮，但不强行改写目标项目输出编码。回溯时乱码可以尝试再次点击锚点。
 
 7. `sync` 导出担心覆盖。  
 说明：`sync` 只同步目标 UI 目录，不改业务源码；仍建议先确认目标路径再执行。
 
+8. requirements中的pywinpty; platform_system == "Windows"，单独下载有问题的话可以只是pip install pywinpty
 ---
 
 ## 7. 未来计划（Roadmap）
 
 短期（当前进行中）：
-1. 完善“锚点回滚后环境级恢复”策略（不仅回放输入）。
-2. 补充历史锚点精细清理策略（按 run_id/时间窗/数量）。
-3. 增强多轮交互场景的自动引导与恢复体验。
+1. 物理快照恢复彻底落地（有一些小BUG）
+2. 进度条的准确性（一些小BUG）
+3. 完善“锚点回滚后环境级恢复”策略（不仅回放输入）。
+4. 彻底完善锚点放置机制。
+5. 增强多轮交互场景的自动引导与恢复体验。
 
 中期：
-1. 从“状态机模拟执行”进一步升级为“真实项目执行引擎”。
-2. 增加文件/命令级快照回滚能力。
-3. 更完善的异常诊断与恢复建议系统。
+1. 增加文件/命令级快照回滚能力。
+2. 实现AIUI的用户自定义制作UI功能
+3. 对AI类项目应该实现回滚后可重构prompt的功能
 
 长期：
 1. 持久化数据库支持（多用户、历史查询、权限隔离）。
 2. 更完整的鉴权、审计与安全边界控制。
 
+可能：
+1. 发展为AI-Native 项目自治与交互中枢 （集成式github项目工具箱？）
 ---
 
 ## 8. 目录参考

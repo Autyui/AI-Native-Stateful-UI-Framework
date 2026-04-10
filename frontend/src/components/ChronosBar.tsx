@@ -17,7 +17,12 @@ function cn(...classes: Array<string | undefined | false>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function ChronosBar({ threadId, onSelectAnchor, pollMs = 1500, isRunning = false }: ChronosBarProps) {
+export function ChronosBar({
+  threadId,
+  onSelectAnchor,
+  pollMs = 1500,
+  isRunning = false,
+}: ChronosBarProps) {
   const [overview, setOverview] = React.useState<AnchorsOverviewResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -61,7 +66,9 @@ export function ChronosBar({ threadId, onSelectAnchor, pollMs = 1500, isRunning 
   }, [allItems]);
   const items = showAllHistory ? allItems : dedupedItems;
   const current = allItems[allItems.length - 1] || null;
-  const isCompleted = Boolean(overview && overview.total_steps > 0 && overview.completed_steps >= overview.total_steps);
+  const isCompleted = Boolean(
+    overview && overview.total_steps > 0 && overview.completed_steps >= overview.total_steps
+  );
   const currentStepLabel = isCompleted ? "All steps completed" : overview?.current_step?.label ?? "Waiting to start";
   const nextStepLabel = isCompleted ? "Rollback from anchors to continue" : overview?.next_step?.label ?? "Pending";
   const progressPercent = overview?.progress_percent ?? 0;
@@ -92,7 +99,12 @@ export function ChronosBar({ threadId, onSelectAnchor, pollMs = 1500, isRunning 
 
       <div className="mb-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-200">
         <div className="mb-2 flex items-center justify-between">
-          <div className={cn("font-medium", isCompleted ? "text-emerald-700 dark:text-emerald-300" : "")}>
+          <div
+            className={cn(
+              "font-medium",
+              isCompleted ? "text-emerald-700 dark:text-emerald-300" : ""
+            )}
+          >
             {isCompleted ? "Status: Completed" : "Status: Running"}
           </div>
           <button
@@ -115,7 +127,10 @@ export function ChronosBar({ threadId, onSelectAnchor, pollMs = 1500, isRunning 
 
       <div className="relative mt-3">
         <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-          <div className="h-full bg-blue-500 transition-all" style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }} />
+          <div
+            className="h-full bg-blue-500 transition-all"
+            style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
+          />
         </div>
         <div className="mt-2 text-right text-[11px] text-zinc-500">{progressPercent.toFixed(2)}%</div>
 
@@ -163,7 +178,9 @@ export function ChronosBar({ threadId, onSelectAnchor, pollMs = 1500, isRunning 
                   onSelectAnchor?.(it);
                 }}
               >
-                <span className={cn("h-2 w-2 rounded-full", isCurrent ? "bg-blue-500" : "bg-zinc-400")} />
+                <span
+                  className={cn("h-2 w-2 rounded-full", isCurrent ? "bg-blue-500" : "bg-zinc-400")}
+                />
                 <span className="font-medium">{it.last_step_id ?? "anchor"}</span>
                 <span className="text-zinc-400">#{idx}</span>
 

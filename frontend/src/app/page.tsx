@@ -24,7 +24,7 @@ type ContextUiPayload = {
 };
 const DASHBOARD_BG_URL_STORAGE_KEY = "aiui-dashboard-bg-url";
 const DASHBOARD_BG_OPACITY_STORAGE_KEY = "aiui-dashboard-bg-opacity";
-const DEFAULT_DASHBOARD_BG_URL = process.env.NEXT_PUBLIC_AIUI_BG_URL || "http://localhost:8000/assets/bg-custom.jpg"; 
+const DEFAULT_DASHBOARD_BG_URL = process.env.NEXT_PUBLIC_AIUI_BG_URL || "http://localhost:3001/assets/bg-custom.jpg"; 
 
 function isLikelyRemoteRepo(source: string) {
   return /^https?:\/\//i.test(source) || /^git@/i.test(source);

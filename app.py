@@ -41,16 +41,16 @@ app = FastAPI(title="AI-Native Stateful UI - MVP Plan API")
 def _cors_origins() -> List[str]:
     """
     Local default:
-    - http://localhost:3000
-    - http://127.0.0.1:3000
+    - http://localhost:3001
+    - http://127.0.0.1:3001
 
     Optional override:
-    - CORS_ALLOW_ORIGINS="http://localhost:3000,http://127.0.0.1:3000"
+    - CORS_ALLOW_ORIGINS="http://localhost:3001,http://127.0.0.1:3001"
     - CORS_ALLOW_ORIGINS="*"  (dev only)
     """
     raw = (os.getenv("CORS_ALLOW_ORIGINS") or "").strip()
     if not raw:
-        return ["http://localhost:3000", "http://127.0.0.1:3000"]
+        return ["http://localhost:3001", "http://127.0.0.1:3001"]
     if raw == "*":
         return ["*"]
     return [x.strip() for x in raw.split(",") if x.strip()]
