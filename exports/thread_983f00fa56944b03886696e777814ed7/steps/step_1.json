@@ -1,0 +1,12 @@
+{
+  "completed_at": "2026-04-07T15:53:06.615241+00:00",
+  "checkpoint_summary": "completed:step_1",
+  "ui_render": {
+    "type": "info_card",
+    "content": {
+      "text": "step_1 已完成（未提供 ui_render 细节）"
+    }
+  },
+  "result_text": "content='' additional_kwargs={'refusal': None} response_metadata={'token_usage': {'completion_tokens': 789, 'prompt_tokens': 414, 'total_tokens': 1203, 'completion_tokens_details': {'accepted_prediction_tokens': None, 'audio_tokens': None, 'reasoning_tokens': 240, 'rejected_prediction_tokens': None}, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 0}}, 'model_provider': 'openai', 'model_name': 'gpt-5.3-codex', 'system_fingerprint': None, 'id': 'resp_020afa02febfbdca0169d5285611cc8197bbfaa171e2f133cb', 'finish_reason': 'stop', 'logprobs': None} id='lc_run--019d68a5-7f0a-7531-95fa-8b626ffd844b-0' tool_calls=[] invalid_tool_calls=[] usage_metadata={'input_tokens': 414, 'output_tokens': 789, 'total_tokens': 1203, 'input_token_details': {'cache_read': 0}, 'output_token_details': {'reasoning': 240}}",
+  "artifacts": {}
+}

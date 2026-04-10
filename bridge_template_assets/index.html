@@ -1,0 +1,1455 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIUI Realtime Console</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --bg-image: url("./assets/bg-custom.jpg");
+      --bg-rgb: 244, 246, 248;
+      --bg-opacity: 0.8;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #dbe3ea;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --orange: #ea580c;
+      --danger: #dc2626;
+      --log: #0b1220;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background-color: #f4f6f8;
+      background-image:
+        linear-gradient(
+          to bottom,
+          rgba(var(--bg-rgb), var(--bg-opacity)),
+          rgba(var(--bg-rgb), calc(var(--bg-opacity) + 0.1))
+        ),
+        var(--bg-image);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .title { font-size: 24px; font-weight: 700; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .chip {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      background: #fff;
+    }
+    .chip.ok { border-color: #86efac; background: #f0fdf4; color: #166534; }
+    .chip.warn { border-color: #fdba74; background: #fff7ed; color: #9a3412; }
+    .chip.bad { border-color: #fca5a5; background: #fef2f2; color: #991b1b; }
+    .toolbar input, .toolbar textarea, .toolbar select, .toolbar button {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+      background: #fff;
+    }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .control-item {
+      border: 1px solid #d7e2ef;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      padding: 10px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+    }
+    .control-item .label {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 8px;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .toolbar textarea { width: 100%; min-height: 64px; resize: vertical; }
+    .toolbar button {
+      cursor: pointer;
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+      font-weight: 600;
+    }
+    .toolbar button.secondary {
+      background: #fff;
+      border-color: var(--border);
+      color: #111827;
+      font-weight: 500;
+    }
+    .toolbar button.danger {
+      background: #fff;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      background: #f8fafc;
+    }
+    .metric .k { font-size: 11px; color: var(--muted); }
+    .metric .v { margin-top: 6px; font-size: 14px; font-weight: 700; }
+    .progress {
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #eef2f7;
+      overflow: hidden;
+      height: 12px;
+    }
+    .progress > div {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #3b82f6, #22c55e);
+      transition: width 0.25s ease;
+    }
+    .reconstructing-hint {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #1d4ed8;
+      display: none;
+    }
+    .reconstructing-hint.show {
+      display: block;
+      animation: pulse-blue 1.4s ease-in-out infinite;
+    }
+    .stages {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .stage {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      background: #fff;
+      color: #334155;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .stage.done {
+      border-color: #86efac;
+      background: #f0fdf4;
+      color: #166534;
+      padding-left: 26px;
+    }
+    .stage.done::before {
+      content: "✅";
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+    }
+    .stage.current {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+      animation: pulse-blue 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse-blue {
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35); }
+      70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.65fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .terminal-card {
+      min-height: 72vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    .logs {
+      margin-top: 10px;
+      background: var(--log);
+      color: #dbe8ff;
+      border-radius: 10px;
+      border: 1px solid #18233b;
+      padding: 10px;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      max-height: 420px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    .term-host {
+      width: 100%;
+      height: 100%;
+      min-height: 460px;
+      border-radius: 10px;
+      border: 1px solid #18233b;
+      background: #0b1220;
+      overflow: hidden;
+    }
+    .event-logs {
+      margin-top: 10px;
+      min-height: 90px;
+      max-height: 160px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #1f2937;
+      padding: 8px;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .panel-title {
+      margin-top: 12px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #0f172a;
+    }
+    .anchor-list {
+      margin-top: 8px;
+      display: grid;
+      gap: 8px;
+      max-height: 220px;
+      overflow: auto;
+      border: 1px solid #dbe3ea;
+      border-radius: 10px;
+      padding: 8px;
+      background: #f8fafc;
+    }
+    .anchor-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid #dbe3ea;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .anchor-meta {
+      font-size: 12px;
+      color: #334155;
+      line-height: 1.35;
+    }
+    .anchor-id {
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .anchor-tags {
+      display: inline-flex;
+      gap: 6px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .anchor-tag {
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 1px 6px;
+      border: 1px solid #dbeafe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .anchor-tag.history {
+      border-color: #fde68a;
+      background: #fffbeb;
+      color: #92400e;
+    }
+    .anchor-tag.legacy {
+      border-color: #fecdd3;
+      background: #fff1f2;
+      color: #be123c;
+    }
+    .anchor-row button {
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      padding: 6px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .anchor-actions {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      align-items: center;
+    }
+    .anchor-actions button {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: #1f2937;
+      font-size: 12px;
+      padding: 6px 8px;
+      cursor: pointer;
+    }
+    .anchor-actions button.danger {
+      border-color: #fecaca;
+      background: #fff1f2;
+      color: #b91c1c;
+    }
+    .terminal-wrap {
+      position: relative;
+      margin-top: 10px;
+      height: 100%;
+    }
+    .terminal-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(11, 18, 32, 0.64);
+      color: #dbeafe;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      gap: 10px;
+      z-index: 2;
+      backdrop-filter: blur(2px);
+    }
+    .terminal-overlay.show {
+      display: flex;
+    }
+    .input-lock-wrap {
+      position: relative;
+      margin-top: 2px;
+    }
+    .input-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.74);
+      color: #1e3a8a;
+      font-weight: 700;
+      gap: 8px;
+      z-index: 2;
+      backdrop-filter: blur(1px);
+    }
+    .input-overlay.show {
+      display: flex;
+    }
+    .overlay-spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 2px solid rgba(147, 197, 253, 0.4);
+      border-top-color: #93c5fd;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .log-line.error { color: #fca5a5; }
+    .log-line.input { color: #93c5fd; font-weight: 600; }
+    .log-line.rewind {
+      color: #f59e0b;
+      font-weight: 700;
+    }
+    .rewind-flash {
+      animation: rewind-wipe 260ms ease-out;
+    }
+    @keyframes rewind-wipe {
+      0% { filter: brightness(1) contrast(1); opacity: 1; }
+      35% { filter: brightness(1.85) contrast(1.2); opacity: 0.8; }
+      100% { filter: brightness(1) contrast(1); opacity: 1; }
+    }
+    .hint-box {
+      border: 1px dashed #fcd34d;
+      background: #fffbeb;
+      color: #7c2d12;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      display: none;
+    }
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 99;
+      padding: 16px;
+    }
+    .modal {
+      width: min(700px, 100%);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.25);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .modal h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .modal .desc {
+      font-size: 13px;
+      color: #334155;
+    }
+    .modal textarea {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      width: 100%;
+      min-height: 80px;
+      resize: vertical;
+      font-size: 13px;
+    }
+    .modal .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .modal .actions button {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      background: #fff;
+      font-size: 13px;
+    }
+    .modal .actions .primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+      font-weight: 600;
+    }
+    .modal .actions .danger {
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+    @media (max-width: 960px) {
+      .status-grid, .grid { grid-template-columns: 1fr; }
+      .controls-grid { grid-template-columns: 1fr; }
+      .term-host {
+        min-height: 420px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="title">AIUI Realtime Bridge Console</div>
+      <div class="muted">Terminal &lt;-&gt; WebSocket &lt;-&gt; JSON UI state</div>
+      <div class="row" style="margin-top:10px;">
+        <span id="connChip" class="chip warn">Connecting...</span>
+        <span id="runChip" class="chip">Idle</span>
+        <span id="interruptChip" class="chip" style="display:none;">Interaction Required</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 10px; padding: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+        <span>背景遮罩透明度:</span>
+        <input
+          type="range"
+          id="opacitySlider"
+          min="0"
+          max="1"
+          step="0.01"
+          value="0.8"
+          style="cursor: pointer; flex: 1;"
+        />
+        <span id="opacityVal">80%</span>
+      </div>
+    </div>
+
+    <div class="card toolbar">
+      <div class="controls-grid">
+        <div class="control-item">
+          <div class="label">Live Input</div>
+          <div class="input-lock-wrap">
+            <div class="row">
+              <button id="btnReconnect" class="secondary">Reconnect</button>
+              <button id="btnSend">Send Input</button>
+              <input id="stdinInput" type="text" placeholder="type input then Enter / Send" style="flex:1; min-width:220px;" />
+            </div>
+            <div id="inputOverlay" class="input-overlay">
+              <span class="overlay-spinner"></span>
+              <span id="inputOverlayText">Reconstructing Workspace...</span>
+            </div>
+          </div>
+        </div>
+        <div class="control-item">
+          <div class="label">Timeline Rewind</div>
+          <div class="row">
+            <input id="rollbackStep" type="number" min="1" value="1" style="width:120px;" />
+            <button id="btnRollback" class="danger">Rollback To Step</button>
+          </div>
+          <div class="muted" style="margin-top:8px;">Input recorder will replay commands before this step.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="status-grid">
+        <div class="metric"><div class="k">Current Stage</div><div id="currentStage" class="v">-</div></div>
+        <div class="metric"><div class="k">Next Stage</div><div id="nextStage" class="v">-</div></div>
+        <div class="metric"><div class="k">Progress</div><div id="progressText" class="v">0%</div></div>
+        <div class="metric"><div class="k">Last Update</div><div id="lastUpdate" class="v">-</div></div>
+      </div>
+      <div id="reconstructHint" class="reconstructing-hint">Reconstructing Timeline...</div>
+      <div class="progress"><div id="progressBar"></div></div>
+      <div id="stagesBox" class="stages"></div>
+      <div id="interruptBox" class="hint-box" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="grid">
+      <div class="card terminal-card">
+        <div style="font-weight:700;">Runtime Logs</div>
+        <div class="terminal-wrap">
+          <div id="terminalHost" class="term-host"></div>
+          <div id="replayOverlay" class="terminal-overlay">
+            <span class="overlay-spinner"></span>
+            <span>Reconstructing Workspace...</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-weight:700;">Protocol Checklist</div>
+        <div id="checklist" class="logs" style="background:#f8fafc;color:#1f2937;border-color:#dbe3ea;font-family:inherit;"></div>
+        <div class="panel-title">Rollback Anchors</div>
+        <div id="anchorList" class="anchor-list"></div>
+        <div class="anchor-actions">
+          <span id="anchorCountText" class="muted">Anchors: 0</span>
+          <button id="btnClearAnchorHistory" type="button">Clear History</button>
+          <button id="btnAnchorMore" type="button">Show More</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <div id="aiDiagMask" class="modal-mask">
+    <div class="modal">
+      <h3>AI Diagnosis</h3>
+      <div class="desc">
+        A runtime error was detected. Do you want to roll back to the last successful anchor and try a new prompt?
+      </div>
+      <div id="aiDiagErrorLine" class="desc" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px;"></div>
+      <label class="desc" for="aiDiagPrompt">Optional: new prompt (auto-send after rollback)</label>
+      <textarea id="aiDiagPrompt" placeholder="Example: switch to a compatible path and skip missing dependency step"></textarea>
+      <div class="actions">
+        <button id="aiDiagCancel" class="danger">Skip for now</button>
+        <button id="aiDiagConfirm" class="primary">Auto rollback and retry</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+  <script>
+    const state = {
+      ws: null,
+      connected: false,
+      stages: [],
+      currentStageIndex: -1,
+      progress: 0,
+      interruptLine: '',
+      reconnectTimer: null,
+      pendingDiag: null,
+      isReplaying: false,
+      pendingInputType: 'text',
+      anchors: [],
+      anchorTotal: 0,
+      anchorHasMore: false,
+      anchorPageSize: 8,
+      currentRunId: '',
+      historyClearArmed: false,
+      historyClearTimer: null,
+      term: null,
+      fitAddon: null,
+      termReady: false,
+      termResizeTimer: null,
+      termLogBuffer: [],
+      lastLogResetAt: 0,
+      replayMode: false,
+      rollbackProcessing: false,
+      isReconstructing: false,
+      ignoreProgressUntil: 0,
+      forceCurrentStageLabel: '',
+      debugEnabled:
+        new URLSearchParams(window.location.search).get('debug') === '1' ||
+        window.localStorage.getItem('aiui_debug') === '1',
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function _termLogLine(line, cls = '') {
+      const text = String(line ?? '');
+      if (cls === 'error') return `\x1b[31m${text}\x1b[0m`;
+      if (cls === 'input') return `\x1b[36m${text}\x1b[0m`;
+      if (cls === 'rewind') return `\x1b[33;1m${text}\x1b[0m`;
+      return text;
+    }
+
+    function _flushTermLogBuffer() {
+      if (!state.term || !state.termReady) return;
+      const pending = Array.isArray(state.termLogBuffer) ? state.termLogBuffer : [];
+      while (pending.length > 0) {
+        state.term.writeln(pending.shift());
+      }
+    }
+
+    function appendLog(line, cls = '') {
+      if (!state.debugEnabled) return;
+      const rendered = _termLogLine(line, cls);
+      if (state.term && state.termReady) {
+        state.term.writeln(rendered);
+        return;
+      }
+      state.termLogBuffer.push(rendered);
+      while (state.termLogBuffer.length > 400) state.termLogBuffer.shift();
+    }
+
+    function setReconstructing(active) {
+      state.isReconstructing = !!active;
+      const hint = $('reconstructHint');
+      if (!hint) return;
+      if (active) hint.classList.add('show');
+      else hint.classList.remove('show');
+    }
+
+    function setInputInteractivity(enabled) {
+      const input = $('stdinInput');
+      const sendBtn = $('btnSend');
+      if (input) input.disabled = !enabled;
+      if (sendBtn) sendBtn.disabled = !enabled;
+    }
+
+    function estimateProgressByStage(stageIndex) {
+      const stages = Array.isArray(state.stages) ? state.stages : [];
+      if (!Number.isFinite(Number(stageIndex)) || Number(stageIndex) < 0 || stages.length <= 0) {
+        return 0;
+      }
+      const idx = Math.max(0, Math.min(stages.length - 1, Number(stageIndex)));
+      return Math.max(0, Math.min(100, ((idx + 1) / stages.length) * 100));
+    }
+
+    function rollbackBanner(msg, update) {
+      return '--- Reconstructing Timeline ---';
+    }
+
+    function animateRollbackWipe() {
+      const targets = [$('terminalHost')];
+      for (const node of targets) {
+        if (!node) continue;
+        node.classList.remove('rewind-flash');
+        void node.offsetWidth;
+        node.classList.add('rewind-flash');
+        setTimeout(() => node.classList.remove('rewind-flash'), 280);
+      }
+    }
+
+    function clearLogsForRollback(msg, update = '') {
+      const now = Date.now();
+      const u = String(update || '').toLowerCase();
+      const hard = (u === 'clear_logs' || u === 'rollback_start' || u === 'rollback');
+      const canClear = hard || (now - Number(state.lastLogResetAt || 0) > 700);
+      animateRollbackWipe();
+
+      if (canClear) {
+        state.termLogBuffer = [];
+        if (state.term) {
+          try {
+            state.term.reset();
+          } catch (_e1) {
+            try {
+              state.term.clear();
+            } catch (_e2) {}
+          }
+        }
+        state.lastLogResetAt = now;
+      }
+
+      const idxRaw = Number(msg?.current_stage_index ?? msg?.target_stage_index ?? -1);
+      if (Number.isFinite(idxRaw) && idxRaw >= 0) {
+        state.currentStageIndex = idxRaw;
+      }
+      const pRaw = Number(msg?.progress);
+      if (Number.isFinite(pRaw)) {
+        state.progress = Math.max(0, Math.min(100, pRaw));
+      } else if (Number.isFinite(idxRaw) && idxRaw === 0) {
+        state.progress = 0;
+      }
+      renderStatus();
+
+      if (canClear) {
+        const marker = rollbackBanner(msg, update);
+        if (state.term) {
+          state.term.write(`\r\n${marker}\r\n`);
+        } else {
+          appendLog(marker, 'rewind');
+        }
+      }
+    }
+
+    function shouldSuppressWarn(msg) {
+      if (state.debugEnabled) return false;
+      const text = String(msg?.message || '');
+      return /(Blocked ANSI-only stdin payload|Filtered ANSI control sequence from stdin payload|ANSI-only replay input)/i.test(text);
+    }
+
+    function syncTerminalSize() {
+      if (!state.term || !state.fitAddon) return;
+      try {
+        state.fitAddon.fit();
+      } catch (_e) {}
+      const cols = Number(state.term.cols || 140);
+      const rows = Number(state.term.rows || 36);
+      if (Number.isFinite(cols) && Number.isFinite(rows)) {
+        sendJson({ type: 'resize', cols, rows });
+      }
+    }
+
+    function scheduleTerminalResize() {
+      if (state.termResizeTimer) clearTimeout(state.termResizeTimer);
+      state.termResizeTimer = setTimeout(() => {
+        state.termResizeTimer = null;
+        syncTerminalSize();
+      }, 70);
+    }
+
+    function initTerminal() {
+      if (state.termReady) return;
+      const host = $('terminalHost');
+      if (!host) return;
+      if (typeof window.Terminal === 'undefined' || !window.FitAddon || !window.FitAddon.FitAddon) {
+        appendLog('[term] Xterm.js failed to load from CDN.', 'error');
+        return;
+      }
+      state.term = new window.Terminal({
+        convertEol: false,
+        cursorBlink: true,
+        fontFamily: 'Consolas, Menlo, Monaco, monospace',
+        fontSize: 14,
+        lineHeight: 1.2,
+        theme: {
+          background: '#0b1220',
+          foreground: '#dbe8ff',
+        },
+        scrollback: 5000,
+      });
+      state.fitAddon = new window.FitAddon.FitAddon();
+      state.term.loadAddon(state.fitAddon);
+      state.term.open(host);
+      syncTerminalSize();
+      state.term.focus();
+      state.term.onData((data) => {
+        if (!state.connected || state.isReconstructing) return;
+        sendJson({ type: 'stdin', payload: data });
+      });
+      state.term.onResize(({ cols, rows }) => {
+        sendJson({ type: 'resize', cols, rows });
+      });
+      state.termReady = true;
+      _flushTermLogBuffer();
+      appendLog('[term] terminal ready');
+    }
+
+    function setConn(connected) {
+      state.connected = !!connected;
+      const chip = $('connChip');
+      if (!chip) return;
+      if (state.connected) {
+        chip.className = 'chip ok';
+        chip.textContent = 'WebSocket Connected';
+      } else {
+        chip.className = 'chip warn';
+        chip.textContent = 'WebSocket Disconnected';
+      }
+    }
+
+    function setRunChip(text, kind = 'warn') {
+      const chip = $('runChip');
+      if (!chip) return;
+      chip.className = `chip ${kind}`;
+      chip.textContent = text;
+    }
+
+    function renderStatus() {
+      const cur = state.currentStageIndex;
+      const stages = state.stages || [];
+      const current = state.forceCurrentStageLabel
+        ? String(state.forceCurrentStageLabel)
+        : ((cur >= 0 && cur < stages.length) ? stages[cur].label : '-');
+      const next = (cur + 1 >= 0 && cur + 1 < stages.length) ? stages[cur + 1].label : '-';
+      $('currentStage').textContent = current;
+      $('nextStage').textContent = next;
+      $('progressText').textContent = `${Number(state.progress || 0).toFixed(1)}%`;
+      $('progressBar').style.width = `${Math.max(0, Math.min(100, Number(state.progress || 0)))}%`;
+      $('lastUpdate').textContent = new Date().toLocaleTimeString();
+      $('stagesBox').innerHTML = stages.map((s, idx) => {
+        let cls = 'stage';
+        if (cur >= 0 && idx < cur) cls += ' done';
+        if (idx === cur) cls += ' current';
+        return `<span class="${cls}">${escapeHtml(s.label || s.id || `stage_${idx + 1}`)}</span>`;
+      }).join('');
+    }
+
+    function renderChecklist() {
+      const checklist = $('checklist');
+      if (!checklist) return;
+      const stages = Array.isArray(state.stages) ? state.stages : [];
+      const lines = [
+        `Loaded stages: ${stages.length}`,
+        ...stages.map((s) => `- ${s.index + 1}. ${s.label}`),
+        '',
+        `Visible anchors: ${Array.isArray(state.anchors) ? state.anchors.length : 0}`,
+        `Total anchors: ${Number(state.anchorTotal || 0)}`,
+      ];
+      checklist.textContent = lines.join('\n');
+    }
+
+    function renderAnchorList() {
+      const box = $('anchorList');
+      const moreBtn = $('btnAnchorMore');
+      const countText = $('anchorCountText');
+      if (!box || !moreBtn || !countText) return;
+
+      const anchors = Array.isArray(state.anchors) ? state.anchors : [];
+      countText.textContent = `Anchors: ${anchors.length}/${Number(state.anchorTotal || anchors.length)}`;
+      moreBtn.style.display = state.anchorHasMore ? 'inline-block' : 'none';
+
+      if (!anchors.length) {
+        box.innerHTML = '<div class="muted">No anchors yet. Stage transitions will create anchors automatically.</div>';
+        return;
+      }
+
+      box.innerHTML = anchors.map((a) => {
+        const stageNum = Number(a.stage_index) + 1;
+        const aid = escapeHtml(a.anchor_id || 'anchor');
+        const label = escapeHtml(a.stage_label || `stage_${Math.max(1, stageNum)}`);
+        const reason = escapeHtml(a.reason || 'stage_change');
+        const inputCount = Number(a.input_count || 0);
+        const ts = escapeHtml(a.ts || '-');
+        const runId = escapeHtml(a.run_id || '-');
+        const scope = String(a.session_scope || '').toLowerCase();
+        let tagHtml = '';
+        if (scope === 'history') {
+          tagHtml = '<span class="anchor-tags"><span class="anchor-tag history">History</span></span>';
+        } else if (scope === 'legacy') {
+          tagHtml = '<span class="anchor-tags"><span class="anchor-tag legacy">Legacy</span></span>';
+        }
+        return `
+          <div class="anchor-row">
+            <div class="anchor-meta">
+              <div class="anchor-id">${aid}${tagHtml}</div>
+              <div>Stage ${stageNum}: ${label}</div>
+              <div>Reason: ${reason} | Inputs: ${inputCount}</div>
+              <div class="muted">${ts} | run: ${runId}</div>
+            </div>
+            <button type="button" data-anchor-id="${aid}">Rollback</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function requestAnchors(append = false) {
+      const payload = {
+        type: 'list_anchors',
+        limit: Number(state.anchorPageSize || 8),
+        offset: append ? Number((state.anchors || []).length) : 0,
+        append: !!append,
+      };
+      return sendJson(payload);
+    }
+
+    function rollbackToAnchor(anchorId) {
+      const aid = String(anchorId || '').trim();
+      if (!aid) return;
+      setRunChip('Rollback Requested', 'warn');
+      const ok = sendJson({ type: 'rollback_anchor', anchor_id: aid });
+      if (!ok) setRunChip('Disconnected', 'bad');
+      appendLog(`[ui] rollback requested by anchor: ${aid}`);
+    }
+
+    function resetHistoryClearArm() {
+      const btn = $('btnClearAnchorHistory');
+      if (!btn) return;
+      state.historyClearArmed = false;
+      if (state.historyClearTimer) {
+        clearTimeout(state.historyClearTimer);
+        state.historyClearTimer = null;
+      }
+      btn.textContent = 'Clear History';
+      btn.classList.remove('danger');
+    }
+
+    function requestClearHistory() {
+      const btn = $('btnClearAnchorHistory');
+      if (!btn) return;
+      if (!state.historyClearArmed) {
+        state.historyClearArmed = true;
+        btn.textContent = 'Confirm Clear';
+        btn.classList.add('danger');
+        appendLog('[ui] click "Confirm Clear" to remove all historical anchors');
+        state.historyClearTimer = setTimeout(() => {
+          resetHistoryClearArm();
+        }, 6000);
+        return;
+      }
+
+      if (!window.confirm('Confirm clearing all historical anchors and legacy backups?')) {
+        resetHistoryClearArm();
+        return;
+      }
+      const ok = sendJson({ type: 'clear_anchor_history' });
+      if (!ok) {
+        appendLog('[ui] clear history failed: websocket disconnected', 'error');
+      } else {
+        appendLog('[ui] clear history requested');
+      }
+      resetHistoryClearArm();
+    }
+
+    function renderInterrupt(line, inputType = 'text') {
+      const chip = $('interruptChip');
+      const box = $('interruptBox');
+      const text = String(line || '').trim();
+      if (!text) {
+        chip.style.display = 'none';
+        box.style.display = 'none';
+        box.textContent = '';
+        state.pendingInputType = 'text';
+        return;
+      }
+      chip.style.display = 'inline-block';
+      box.style.display = 'block';
+      box.textContent = `Interaction required: ${text}`;
+      state.pendingInputType = String(inputType || 'text').toLowerCase() === 'password' ? 'password' : 'text';
+    }
+
+    function showAiDiag(msg) {
+      state.pendingDiag = msg || null;
+      const mask = $('aiDiagMask');
+      const lineBox = $('aiDiagErrorLine');
+      const prompt = $('aiDiagPrompt');
+      if (!mask || !lineBox || !prompt) return;
+      lineBox.textContent = String(msg?.line || 'Detected runtime error.');
+      prompt.value = '';
+      mask.style.display = 'flex';
+    }
+
+    function hideAiDiag() {
+      const mask = $('aiDiagMask');
+      if (!mask) return;
+      mask.style.display = 'none';
+      state.pendingDiag = null;
+    }
+
+    function showReplayOverlay(message = 'Reconstructing Workspace...') {
+      const text = String(message || 'Reconstructing Workspace...');
+      const overlay = $('replayOverlay');
+      if (overlay) {
+        const textNode = overlay.querySelector('span:last-child');
+        if (textNode) textNode.textContent = text;
+        overlay.classList.add('show');
+      }
+      const inputOverlay = $('inputOverlay');
+      if (inputOverlay) {
+        const inputText = $('inputOverlayText');
+        if (inputText) inputText.textContent = text;
+        inputOverlay.classList.add('show');
+      }
+      setInputInteractivity(false);
+      state.isReplaying = true;
+    }
+
+    function hideReplayOverlay() {
+      const overlay = $('replayOverlay');
+      if (overlay) overlay.classList.remove('show');
+      const inputOverlay = $('inputOverlay');
+      if (inputOverlay) inputOverlay.classList.remove('show');
+      setInputInteractivity(true);
+      state.isReplaying = false;
+    }
+
+    function handleUiState(msg) {
+      const update = String(msg.update || '').toLowerCase();
+      const isReplayFrame = Boolean(msg.replaying);
+      if (update === 'rollback_start') {
+        state.rollbackProcessing = true;
+        state.replayMode = true;
+        setReconstructing(true);
+        clearLogsForRollback(msg, 'rollback_start');
+        showReplayOverlay('Reconstructing Workspace...');
+        setRunChip('Reconstructing', 'warn');
+        return;
+      }
+      if (update === 'rollback') {
+        const phase = String(msg.phase || '').toLowerCase();
+        if (!phase || phase === 'start') {
+          state.rollbackProcessing = true;
+          state.replayMode = true;
+          setReconstructing(true);
+          clearLogsForRollback(msg, 'rollback');
+          showReplayOverlay('Reconstructing Workspace...');
+          setRunChip('Reconstructing', 'warn');
+          return;
+        }
+      }
+      if (update === 'replay_mode') {
+        const active = Boolean(msg.active);
+        state.replayMode = active;
+        if (active) {
+          state.rollbackProcessing = true;
+          setReconstructing(true);
+          showReplayOverlay('Reconstructing Workspace...');
+          setRunChip('Reconstructing', 'warn');
+        }
+        return;
+      }
+      if (update === 'clear_logs') {
+        clearLogsForRollback(msg, update);
+        return;
+      }
+      if (update === 'rollback_complete') {
+        const idx = Number(msg.current_stage_index ?? msg.target_stage_index ?? -1);
+        if (Number.isFinite(idx)) state.currentStageIndex = idx;
+        const p = Number(msg.progress);
+        if (Number.isFinite(p)) state.progress = Math.max(0, Math.min(100, p));
+        else state.progress = estimateProgressByStage(state.currentStageIndex);
+        state.forceCurrentStageLabel = String(msg.current_stage_label || '');
+        renderStatus();
+        setRunChip('Reconstructing', 'warn');
+        return;
+      }
+      if (update === 'rollback_sync' || update === 'sync_after_rollback') {
+        const idx = Number(msg.current_stage_index ?? msg.target_stage_index ?? -1);
+        if (Number.isFinite(idx)) state.currentStageIndex = idx;
+        const p = Number(msg.progress);
+        if (Number.isFinite(p)) state.progress = Math.max(0, Math.min(100, p));
+        else state.progress = estimateProgressByStage(state.currentStageIndex);
+        if (Number.isFinite(idx) && idx <= 0) {
+          state.currentStageIndex = 0;
+          state.progress = 0;
+        }
+        state.forceCurrentStageLabel = String(msg.current_stage_label || '');
+        state.ignoreProgressUntil = Date.now() + 1500;
+        state.replayMode = false;
+        state.rollbackProcessing = false;
+        setReconstructing(false);
+        renderStatus();
+        hideReplayOverlay();
+        hideAiDiag();
+        setRunChip('Reconstructed', 'ok');
+        return;
+      }
+      if (update === 'init') {
+        if (isReplayFrame && state.rollbackProcessing) {
+          return;
+        }
+        state.rollbackProcessing = false;
+        state.forceCurrentStageLabel = '';
+        state.ignoreProgressUntil = 0;
+        setReconstructing(false);
+        state.stages = Array.isArray(msg.stages) ? msg.stages : [];
+        state.anchors = Array.isArray(msg.anchors) ? msg.anchors : [];
+        state.anchorTotal = Number(msg.total_anchor_count ?? state.anchors.length);
+        state.anchorHasMore = Boolean(msg.has_more_anchors);
+        state.currentRunId = String(msg.current_run_id || state.currentRunId || '');
+        const pageSize = Number(msg.anchor_page_size ?? state.anchorPageSize);
+        if (Number.isFinite(pageSize) && pageSize > 0) state.anchorPageSize = pageSize;
+        state.currentStageIndex = Number.isFinite(Number(msg.current_stage_index))
+          ? Number(msg.current_stage_index)
+          : -1;
+        state.progress = Number(msg.progress || 0);
+        hideReplayOverlay();
+        renderStatus();
+        renderChecklist();
+        renderAnchorList();
+        return;
+      }
+      if (update === 'progress') {
+        if (state.rollbackProcessing) return;
+        if (Date.now() < Number(state.ignoreProgressUntil || 0)) return;
+        const v = Number(msg.progress ?? msg.value ?? 0);
+        if (Number.isFinite(v)) state.progress = Math.max(0, Math.min(100, v));
+        renderStatus();
+        return;
+      }
+      if (update === 'stage_change') {
+        if (state.rollbackProcessing) return;
+        if (Date.now() < Number(state.ignoreProgressUntil || 0)) return;
+        const idx = Number(msg.current_stage_index ?? msg.index ?? -1);
+        if (Number.isFinite(idx)) {
+          state.currentStageIndex = idx;
+          state.forceCurrentStageLabel = '';
+        }
+        renderStatus();
+        return;
+      }
+      if (update === 'interaction_required') {
+        state.interruptLine = String(msg.line || '');
+        const inputType = String(msg.input_type || (String(msg.mode || '').toLowerCase() === 'password_input' ? 'password' : 'text'));
+        renderInterrupt(state.interruptLine, inputType);
+        return;
+      }
+      if (update === 'error_detected') {
+        setRunChip('Error Detected', 'bad');
+        showAiDiag(msg);
+        return;
+      }
+      if (update === 'auto_recover_done') {
+        state.replayMode = false;
+        const idx = Number(msg.current_stage_index ?? msg.target_stage_index ?? -1);
+        if (Number.isFinite(idx)) state.currentStageIndex = idx;
+        const p = Number(msg.progress);
+        state.progress = Number.isFinite(p)
+          ? Math.max(0, Math.min(100, p))
+          : estimateProgressByStage(state.currentStageIndex);
+        setRunChip('Recovered', 'ok');
+        renderStatus();
+        hideAiDiag();
+        return;
+      }
+      if (update === 'anchor_created') {
+        const anchor = msg.anchor;
+        if (anchor && typeof anchor === 'object') {
+          state.anchors = [anchor, ...(Array.isArray(state.anchors) ? state.anchors : [])];
+          state.anchorTotal = Number(msg.anchor_count ?? (Number(state.anchorTotal || 0) + 1));
+          state.anchorHasMore = Boolean(msg.has_more);
+          state.currentRunId = String(msg.current_run_id || state.currentRunId || '');
+          if (state.anchors.length > Number(state.anchorPageSize || 8)) {
+            state.anchors = state.anchors.slice(0, Number(state.anchorPageSize || 8));
+          }
+          renderChecklist();
+          renderAnchorList();
+        }
+        return;
+      }
+      if (update === 'anchors_catalog') {
+        const incoming = Array.isArray(msg.anchors) ? msg.anchors : [];
+        const appendMode = Boolean(msg.append);
+        if (appendMode) {
+          const merged = [...(Array.isArray(state.anchors) ? state.anchors : []), ...incoming];
+          const dedup = [];
+          const seen = new Set();
+          for (const a of merged) {
+            const key = String(a?.anchor_id || '');
+            if (!key || seen.has(key)) continue;
+            seen.add(key);
+            dedup.push(a);
+          }
+          state.anchors = dedup;
+        } else {
+          state.anchors = incoming;
+        }
+        state.anchorTotal = Number(msg.total_anchor_count ?? state.anchors.length);
+        state.anchorHasMore = Boolean(msg.has_more);
+        state.currentRunId = String(msg.current_run_id || state.currentRunId || '');
+        renderChecklist();
+        renderAnchorList();
+        return;
+      }
+      if (update === 'anchors_history_cleared') {
+        state.anchors = Array.isArray(msg.anchors) ? msg.anchors : [];
+        state.anchorTotal = Number(msg.total_anchor_count ?? state.anchors.length);
+        state.anchorHasMore = Boolean(msg.has_more);
+        state.currentRunId = String(msg.current_run_id || state.currentRunId || '');
+        renderChecklist();
+        renderAnchorList();
+        return;
+      }
+      if (update === 'anchor_rollback') {
+        const idx = Number(msg.target_stage_index ?? -1);
+        if (Number.isFinite(idx)) {
+          state.currentStageIndex = idx;
+          const p = Number(msg.progress);
+          state.progress = Number.isFinite(p)
+            ? Math.max(0, Math.min(100, p))
+            : estimateProgressByStage(idx);
+        }
+        renderStatus();
+        return;
+      }
+    }
+
+    function isErrorLine(text) {
+      return /(FileNotFoundError|Directory missing|No such file or directory|ModuleNotFoundError|resources\\s+\\u76ee\\u5f55\\u4e0d\\u5b58\\u5728|not found|missing|error|fail|traceback)/i.test(String(text || ''));
+    }
+
+    function handleMessage(msg) {
+      if (!msg || typeof msg !== 'object') return;
+      const t = String(msg.type || '').toLowerCase();
+      if (t === 'stdio') {
+        const stream = String(msg.stream || 'stdout').toLowerCase();
+        const raw = String(msg.chunk || msg.data || msg.line || '');
+        if (!raw) return;
+        if (Boolean(msg.replaying) && !state.debugEnabled) return;
+        if (stream === 'user_input') {
+          if (state.isReconstructing === true || state.rollbackProcessing === true) return;
+          if (state.debugEnabled) {
+            const lines = raw.split(/\r?\n/).filter(Boolean);
+            for (const line of lines) appendLog(`[user_input] ${line}`, 'input');
+          }
+          return;
+        }
+        if (stream === 'stdout' || stream === 'stderr') {
+          if (state.term) state.term.write(raw);
+        }
+        return;
+      }
+      if (t === 'ui_state') {
+        handleUiState(msg);
+        return;
+      }
+      if (t === 'lifecycle') {
+        const ev = String(msg.event || '');
+        if (ev === 'starting') setRunChip('Running', 'warn');
+        if (ev === 'exited') {
+          const code = Number(msg.exit_code ?? 1);
+          setRunChip(code === 0 ? 'Completed' : `Exited (${code})`, code === 0 ? 'ok' : 'bad');
+          renderInterrupt('');
+          hideReplayOverlay();
+        }
+        return;
+      }
+      if (t === 'warn') {
+        if (shouldSuppressWarn(msg)) return;
+        if (state.debugEnabled) {
+          console.warn('[warn]', String(msg.message || ''));
+        }
+        return;
+      }
+      if (t === 'error') {
+        setRunChip('Error', 'bad');
+        if (state.debugEnabled) {
+          console.error('[error]', String(msg.message || ''));
+        }
+      }
+    }
+
+    function wsUrl() {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${proto}//${window.location.host}/ws/bridge`;
+    }
+
+    function scheduleReconnect() {
+      if (state.reconnectTimer) return;
+      state.reconnectTimer = setTimeout(() => {
+        state.reconnectTimer = null;
+        connect();
+      }, 1200);
+    }
+
+    function connect() {
+      if (state.ws && (state.ws.readyState === WebSocket.OPEN || state.ws.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+      initTerminal();
+      setConn(false);
+      setRunChip('Connecting...', 'warn');
+      const ws = new WebSocket(wsUrl());
+      state.ws = ws;
+
+      ws.onopen = () => {
+        setConn(true);
+        setRunChip('Connected', 'ok');
+        resetHistoryClearArm();
+        scheduleTerminalResize();
+        if (state.term) state.term.focus();
+        requestAnchors(false);
+      };
+
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (!msg || typeof msg !== 'object') return;
+          if (!Object.prototype.hasOwnProperty.call(msg, 'type')) return;
+          handleMessage(msg);
+        } catch (_e) {
+          if (state.debugEnabled) {
+            console.warn('[ws] dropped non-json frame');
+          }
+        }
+      };
+
+      ws.onclose = () => {
+        setConn(false);
+        setRunChip('Disconnected', 'bad');
+        state.rollbackProcessing = false;
+        setReconstructing(false);
+        hideReplayOverlay();
+        resetHistoryClearArm();
+        scheduleReconnect();
+      };
+
+      ws.onerror = () => {
+        setConn(false);
+      };
+    }
+
+    function sendJson(payload) {
+      if (!state.ws || state.ws.readyState !== WebSocket.OPEN) {
+        setConn(false);
+        setRunChip('Disconnected', 'bad');
+        return false;
+      }
+      state.ws.send(JSON.stringify(payload));
+      return true;
+    }
+
+    function sendInput() {
+      const input = $('stdinInput');
+      const raw = String(input.value || '');
+      if (!raw.trim()) return;
+      sendJson({ type: 'stdin', payload: raw + '\n', input_type: state.pendingInputType || 'text' });
+      input.value = '';
+      if (state.pendingInputType === 'password') {
+        state.pendingInputType = 'text';
+      }
+      if (state.term) state.term.focus();
+    }
+
+    function rollbackToStep() {
+      const rawStep = Number($('rollbackStep').value || 1);
+      const step = Number.isFinite(rawStep) ? Math.max(1, Math.floor(rawStep)) : 1;
+      // step is 1-based in UI, index is 0-based in backend
+      const idx = Math.max(0, step - 1);
+      setRunChip('Rollback Requested', 'warn');
+      const ok = sendJson({ type: 'rollback_stage', target_stage_index: idx });
+      if (!ok) setRunChip('Disconnected', 'bad');
+      appendLog(`[ui] rollback requested to step ${step}`);
+    }
+
+    $('btnReconnect').addEventListener('click', () => {
+      if (state.ws) {
+        try { state.ws.close(); } catch (_e) {}
+      }
+      connect();
+    });
+    $('btnSend').addEventListener('click', sendInput);
+    $('stdinInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendInput();
+    });
+    $('btnRollback').addEventListener('click', rollbackToStep);
+    $('btnAnchorMore').addEventListener('click', () => {
+      const ok = requestAnchors(true);
+      if (!ok) appendLog('[ui] load more anchors failed: websocket disconnected', 'error');
+    });
+    $('btnClearAnchorHistory').addEventListener('click', requestClearHistory);
+    $('anchorList').addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const anchorId = target.getAttribute('data-anchor-id');
+      if (!anchorId) return;
+      rollbackToAnchor(anchorId);
+    });
+    $('aiDiagCancel').addEventListener('click', () => {
+      appendLog('[ai_diag] user skipped auto recovery');
+      hideAiDiag();
+    });
+    $('aiDiagConfirm').addEventListener('click', () => {
+      const prompt = String($('aiDiagPrompt').value || '').trim();
+      const target = Number(state?.pendingDiag?.rollback_target_index);
+      setRunChip('Auto Recovering', 'warn');
+      const ok = sendJson({
+        type: 'auto_recover',
+        target_stage_index: Number.isFinite(target) ? target : undefined,
+        prompt,
+      });
+      if (!ok) setRunChip('Disconnected', 'bad');
+      appendLog('[ai_diag] auto recovery requested');
+      hideAiDiag();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (state.ws) {
+        try { state.ws.close(); } catch (_e) {}
+      }
+    });
+    window.addEventListener('resize', scheduleTerminalResize);
+
+    const slider = document.getElementById('opacitySlider');
+    const opacityVal = document.getElementById('opacityVal');
+
+    if (slider && opacityVal) {
+      slider.addEventListener('input', (e) => {
+        const val = Number(e.target.value || 0.8);
+        document.documentElement.style.setProperty('--bg-opacity', String(val));
+        opacityVal.textContent = `${Math.round(val * 100)}%`;
+        window.localStorage.setItem('dashboard-bg-opacity', String(val));
+      });
+
+      window.addEventListener('DOMContentLoaded', () => {
+        const savedOpacity = window.localStorage.getItem('dashboard-bg-opacity');
+        if (savedOpacity !== null) {
+          slider.value = savedOpacity;
+          document.documentElement.style.setProperty('--bg-opacity', savedOpacity);
+          const num = Number(savedOpacity || 0.8);
+          opacityVal.textContent = `${Math.round(num * 100)}%`;
+        }
+      });
+    }
+
+    connect();
+  </script>
+</body>
+</html>
+

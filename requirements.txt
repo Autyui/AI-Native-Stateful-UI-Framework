@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pywinpty; platform_system == "Windows"
+langchain
+langgraph
+langchain-openai
+langchain-google-genai
+langchain-deepseek
+langchain-tavily
+python-dotenv
+typing-extensions

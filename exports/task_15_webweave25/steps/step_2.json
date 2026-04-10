@@ -1,0 +1,18 @@
+{
+  "completed_at": "2026-04-10T10:09:48.247192+00:00",
+  "checkpoint_summary": "completed:step_2",
+  "ui_render": {
+    "type": "terminal",
+    "content": {
+      "title": "Step Runtime - step_2",
+      "lines": [
+        "Step: step_2",
+        "Summary: completed:step_2",
+        "Label: 规划执行路径",
+        "content='' additional_kwargs={'refusal': None} response_metadata={'token_usage': {'completion_tokens': 3220, 'prompt_tokens': 330, 'total_tokens': 3550, 'completion_tokens_details': {'accepted_prediction_tokens': None, 'audio_tokens': None, 'reasoning_tokens': 508, 'rejected_prediction_tokens': None}, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 0}}, 'model_provider': 'openai',"
+      ]
+    }
+  },
+  "result_text": "content='' additional_kwargs={'refusal': None} response_metadata={'token_usage': {'completion_tokens': 3220, 'prompt_tokens': 330, 'total_tokens': 3550, 'completion_tokens_details': {'accepted_prediction_tokens': None, 'audio_tokens': None, 'reasoning_tokens': 508, 'rejected_prediction_tokens': None}, 'prompt_tokens_details': {'audio_tokens': None, 'cached_tokens': 0}}, 'model_provider': 'openai', 'model_name': 'gpt-5.3-codex', 'system_fingerprint': None, 'id': 'resp_0768184453f9e0740169d8cbed4898819ba9ab039223998e3e', 'finish_reason': 'stop', 'logprobs': None} id='lc_run--019d76db-9271-79b3-9258-21e57cdda41b-0' tool_calls=[] invalid_tool_calls=[] usage_metadata={'input_tokens': 330, 'output_tokens': 3220, 'total_tokens': 3550, 'input_token_details': {'cache_read': 0}, 'output_token_details': {'reasoning': 508}}",
+  "artifacts": {}
+}

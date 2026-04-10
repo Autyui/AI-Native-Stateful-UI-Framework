@@ -1,0 +1,6 @@
+__pycache__
+.env
+.data
+.idea
+.vscode
+AUI_DASHBOARD_PROGRESS.md

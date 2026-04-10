@@ -1,0 +1,21 @@
+{
+  "type": "form",
+  "content": {
+    "title": "Step Review - step_3",
+    "description": "Original label: 运行与校验（可回溯）",
+    "fields": [
+      {
+        "name": "refinement_prompt",
+        "label": "Refinement Prompt",
+        "kind": "textarea",
+        "placeholder": "Optional: describe what you want to refine for the next run."
+      },
+      {
+        "name": "notes",
+        "label": "Operator Notes",
+        "kind": "textarea",
+        "placeholder": "Record observations and expected changes."
+      }
+    ]
+  }
+}
