@@ -27,20 +27,10 @@ def normalize_repo_source(repo_url: Optional[str], repo_source: Optional[str]) -
         raise ValueError("repo_source/repo_url cannot be empty.")
     return candidate
 
-
-def _is_github_repo_source(repo_source: str) -> bool:
-    text = (repo_source or "").strip().lower()
-    return text.startswith("https://github.com/") or text.startswith("http://github.com/") or text.startswith(
-        "git@github.com:"
-    )
-
-
 def resolve_local_project_root_from_repo_source(
     repo_source: str,
     repo_ctx: Optional[Dict[str, Any]] = None,
 ) -> Optional[Path]:
-    if _is_github_repo_source(repo_source):
-        return None
     ctx = _resolve_repo_context(repo_source, repo_ctx=repo_ctx)
     return _local_project_root_from_context(ctx)
 

@@ -5,3 +5,10 @@ __pycache__
 .vscode
 AUI_DASHBOARD_PROGRESS.md
 exports
+workplace
+.venv/
+venv/
+frontend/node_modules/
+frontend/.next/
+frontend/tsconfig.tsbuildinfo
+*.pyc

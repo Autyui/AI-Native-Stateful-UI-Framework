@@ -7,7 +7,6 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple
-from urllib.error import HTTPError
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -20,7 +19,6 @@ from bridge_service import (
     normalize_repo_source,
     resolve_local_project_root_from_repo_source,
 )
-from github_reader import GitHubAPIError, GitHubRateLimitError
 from planner import generate_steps_from_repo
 from schemas import PlanRequest, PlanResponse, UIModificationContext
 from state import graph
@@ -71,27 +69,6 @@ def _raise_upstream_friendly_error(e: Exception, *, action: str) -> None:
     """
     if isinstance(e, HTTPException):
         raise e
-    if isinstance(e, GitHubRateLimitError):
-        raise HTTPException(
-            status_code=429,
-            detail=(
-                "检测到 GitHub API 限流。请在环境变量中配置 GITHUB_TOKEN（或 githubToken）后重试；"
-                "若仅用于临时调试，可设置 GITHUB_ALLOW_README_FALLBACK=true 允许 README 降级。"
-            ),
-        )
-    if isinstance(e, GitHubAPIError):
-        raise HTTPException(status_code=502, detail=f"GitHub API failed during {action}: {e}")
-    if isinstance(e, HTTPError):
-        msg = str(e).lower()
-        if getattr(e, "code", None) == 403 and "rate limit" in msg:
-            raise HTTPException(
-                status_code=429,
-                detail=(
-                    "检测到 GitHub API 限流。请在环境变量中配置 GITHUB_TOKEN（或 githubToken）后重试；"
-                    "若仅用于临时调试，可设置 GITHUB_ALLOW_README_FALLBACK=true 允许 README 降级。"
-                ),
-            )
-        raise HTTPException(status_code=502, detail=f"Upstream HTTP error during {action}: {e}")
     if isinstance(e, ValueError):
         raise HTTPException(status_code=400, detail=str(e))
     raise HTTPException(status_code=500, detail=f"{action} failed: {e}")
@@ -709,7 +686,7 @@ def _resolve_bridge_target_project_root(thread_id: str, target_project_root_raw:
         if target_project_root is None:
             raise HTTPException(
                 status_code=400,
-                detail="target_project_root is required for GitHub sources. For local sources it can be omitted.",
+                detail="target_project_root is required when repo source cannot be resolved to a local directory.",
             )
     target_project_root.mkdir(parents=True, exist_ok=True)
     return target_project_root

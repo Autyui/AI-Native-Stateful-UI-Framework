@@ -24,7 +24,7 @@ class UIModificationContextState(TypedDict, total=False):
 
 class AgentState(TypedDict, total=False):
     """
-    LangGraph state for AUI-Dashboard.
+    LangGraph state for CortxUI.
 
     锚点 A（方案 A）约定：
     当用户点击 UI 上的某个“步骤锚点”，回溯对应的是该步骤“刚完成”后的 checkpoint。
@@ -218,7 +218,7 @@ def ensure_plan(state: AgentState) -> AgentState:
     if replan_required and completed_ctx:
         user_notes = (
             f"{user_notes}\n\n"
-            f"[AUI-Dashboard 回溯重规划上下文]\n"
+            f"[CortxUI 回溯重规划上下文]\n"
             f"已完成步骤快照：\n{completed_ctx}\n\n"
             f"请在保留“已完成步骤”前缀意义的前提下，从最后一个已完成步骤之后继续，"
             f"并适当调整剩余步骤以匹配新的用户目标/偏好。"
@@ -289,7 +289,7 @@ def execute_current_step(state: AgentState) -> AgentState:
     llm = _get_llm()
     if has_context_ui:
         system_prompt = (
-            "You are AUI-Dashboard UI refinement executor. "
+            "You are CortxUI UI refinement executor. "
             "You receive a normalized context_ui request. "
             "Apply minimal incremental UI change within the declared scope, keep target_id unchanged, "
             "and do not rewrite unrelated business logic or global flow. "
@@ -306,7 +306,7 @@ def execute_current_step(state: AgentState) -> AgentState:
         )
     else:
         system_prompt = (
-            "You are AUI-Dashboard step executor. "
+            "You are CortxUI step executor. "
             "Generate checkpoint summary and practical UI schema for the current step. "
             "Prefer interactive component types (form/terminal) when appropriate. "
             "Return JSON only (no markdown, no explanation). Format:\n"

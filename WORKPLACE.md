@@ -77,7 +77,7 @@ powershell -ExecutionPolicy Bypass -File .\Start-Local.ps1
 ### 后端
 
 ```powershell
-cd "D:\agent\AI-Native Stateful UI Framework"
+cd "D:\agent\CortxUI"
 .\.venv\Scripts\Activate.ps1
 uvicorn app:app --reload --port 8000
 ```
@@ -85,7 +85,7 @@ uvicorn app:app --reload --port 8000
 ### 前端
 
 ```powershell
-cd "D:\agent\AI-Native Stateful UI Framework\frontend"
+cd "D:\agent\CortxUI\frontend"
 npm run dev
 ```
 
@@ -114,10 +114,9 @@ python .\.aui-dashboard\ui\ui_runner.py
 ## 6. repo_url 输入支持
 
 `POST /run.repo_url` 支持：
-- GitHub URL
 - 本地目录路径（用于本机测试）
 
 示例：
-- `d:\agent\AI-Native Stateful UI Framework`
+- `d:\agent\CortxUI`
 - `.`
-- `local://d:\agent\AI-Native Stateful UI Framework`
+- `local://d:\agent\CortxUI`

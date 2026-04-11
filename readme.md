@@ -1,23 +1,23 @@
-# AIUI 用户指南
+# CortxUI 用户指南
 
 更新时间：2026-04-10  
 
 ## 1. 项目简介
 
-AUI-Dashboard 是一个把“项目执行日志”转成“可视化、可交互、可回溯流程”的控制台工具。
+CortxUI 是一个把“项目执行日志”转成“可视化、可交互、可回溯流程”的控制台工具。
 
 你可以把它理解为：
-1. 给 GitHub 仓库或本地项目生成一个UI，显示执行步骤（Plan/Steps）。
+1. 给项目生成一个UI，显示执行步骤（Plan/Steps）。
 2. 每一步都有状态展示和锚点（Anchor）。
 3. 可以从任意满意的锚点回滚并继续执行。
 4. UI 用轻量 JSON 协议渲染，便于低成本迭代。
 
 ---
-![AIUI_logo](/AIUI_logo.jpg)
+![CortxUI_logo](/CortxUI_logo.jpg)
 ## 2. 当前状态
 
 当前整体完成度约 **90%**，核心能力已可用：
-1. 步骤规划：支持 GitHub URL 与本地目录。
+1. 步骤规划：支持本地目录。
 2. 步骤执行：支持按步推进，自动保存 checkpoint。
 3. 锚点回溯：支持按 `checkpoint_id` / `step_id` 回滚。
 4. 协议化 UI：支持 `info_card / terminal / form / fallback`。
@@ -38,7 +38,7 @@ AUI-Dashboard 是一个把“项目执行日志”转成“可视化、可交互
 ### 3.2 安装依赖
 
 ```powershell
-cd "D:\agent\AI-Native Stateful UI Framework"
+cd "D:\agent\CortxUI"
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -72,7 +72,7 @@ DEEPSEEK_API_KEY=your_deepseek_api_key
 2. `CODEX_API_KEY` / `CODEX_BASE_URL` 会映射到 `OPENAI_*`。
 
 ### 3.4 启动方式
-### 3.4.1 启动AIUI
+### 3.4.1 启动CortxUI
 方式 A（推荐，一键双窗口）：
 
 ```powershell
@@ -83,12 +83,12 @@ DEEPSEEK_API_KEY=your_deepseek_api_key
 
 ```powershell
 # 后端
-cd "安装盘:\目录\AI-Native Stateful UI Framework"
+cd "安装盘:\目录\CortxUI"
 .\.venv\Scripts\Activate.ps1
 python -m uvicorn app:app --port 8000
 
 # 前端
-cd "安装盘:\目录\AI-Native Stateful UI Framework\frontend"
+cd "安装盘:\目录\CortxUI\frontend"
 npm run dev
 ```
 
@@ -99,7 +99,7 @@ npm run dev
 ---
 ### 3.4.2 启动项目的UI
 1. 安装依赖项：
-需要在项目的根目录（打开虚拟环境）再次下载AIUI中的requirements
+需要在项目的根目录（打开虚拟环境）再次下载CortxUI中的requirements
 2. 启动：
 python .aui-dashboard/ui/ui_runner.py
 ## 4. 常用操作
@@ -167,28 +167,25 @@ python ./.aui-dashboard/ui/ui_runner.py
 1. PowerShell 报 `npm.ps1` 禁止执行脚本。  
 解决：用 `npm.cmd` 替代，或临时放开策略后再执行。
 
-2. GitHub API 限流（rate limit）。  
-解决：在 `.env` 配置 `GITHUB_TOKEN`，并重试。
-
-3. OpenAI-compatible 网关返回 blocked/403。  
+2. OpenAI-compatible 网关返回 blocked/403。  
 解决：确认 `OPENAI_BASE_URL` 指向 `/v1`，并设置 `OPENAI_USE_RESPONSES_API=false`。
 
-4. DeepSeek 配置了但仍走 GPT/OPENAI。  
+3. DeepSeek 配置了但仍走 GPT/OPENAI。  
 解决：显式设置 `LLM_MODEL=deepseek:deepseek-chat`，不要只写模型名；系统会按 provider 前缀强制走 DeepSeek 路由。
 
-5. 背景图不显示。  
+4. 背景图不显示。  
 排查顺序：
    - 确认 `\frontend\public\assets` 下的bg-custom.jpg文件存在。
    - 确认通过 `ui_runner.py` 启动（已挂载 `/assets`）。
    - 检查 `index.html` 的 `--bg-image` 路径是否正确。
 
-6. 日志出现乱码或中英混杂。  
+5. 日志出现乱码或中英混杂。  
 说明：多来自目标项目本身编码链路；AUI 会尽量展示与高亮，但不强行改写目标项目输出编码。回溯时乱码可以尝试再次点击锚点。
 
-7. `sync` 导出担心覆盖。  
+6. `sync` 导出担心覆盖。  
 说明：`sync` 只同步目标 UI 目录，不改业务源码；仍建议先确认目标路径再执行。
 
-8. requirements中的pywinpty; platform_system == "Windows"，单独下载有问题的话可以只是pip install pywinpty
+7. requirements中的pywinpty; platform_system == "Windows"，单独下载有问题的话可以只是pip install pywinpty
 ---
 
 ## 7. 未来计划（Roadmap）
@@ -202,7 +199,7 @@ python ./.aui-dashboard/ui/ui_runner.py
 
 中期：
 1. 增加文件/命令级快照回滚能力。
-2. 实现AIUI的用户自定义制作UI功能
+2. 实现CortxUI的用户自定义制作UI功能
 3. 对AI类项目应该实现回滚后可重构prompt的功能
 
 长期：
@@ -210,7 +207,7 @@ python ./.aui-dashboard/ui/ui_runner.py
 2. 更完整的鉴权、审计与安全边界控制。
 
 可能：
-1. 发展为AI-Native 项目自治与交互中枢 （集成式github项目工具箱？）
+1. 发展为AI-Native 项目自治与交互中枢 （集成式项目工具箱？）
 ---
 
 ## 8. 目录参考

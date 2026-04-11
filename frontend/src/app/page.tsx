@@ -22,17 +22,18 @@ type ContextUiPayload = {
   componentJson: unknown;
   scope: "content" | "style" | "layout" | "behavior";
 };
-const DASHBOARD_BG_URL_STORAGE_KEY = "aiui-dashboard-bg-url";
-const DASHBOARD_BG_OPACITY_STORAGE_KEY = "aiui-dashboard-bg-opacity";
-const DEFAULT_DASHBOARD_BG_URL = process.env.NEXT_PUBLIC_AIUI_BG_URL || "http://localhost:3001/assets/bg-custom.jpg"; 
-
-function isLikelyRemoteRepo(source: string) {
-  return /^https?:\/\//i.test(source) || /^git@/i.test(source);
-}
+const DASHBOARD_BG_URL_STORAGE_KEY = "cortxui-dashboard-bg-url";
+const DASHBOARD_BG_OPACITY_STORAGE_KEY = "cortxui-dashboard-bg-opacity";
+const LEGACY_BG_URL_STORAGE_KEY = "aiui-dashboard-bg-url";
+const LEGACY_BG_OPACITY_STORAGE_KEY = "aiui-dashboard-bg-opacity";
+const DEFAULT_DASHBOARD_BG_URL =
+  process.env.NEXT_PUBLIC_CORTXUI_BG_URL ||
+  process.env.NEXT_PUBLIC_AIUI_BG_URL ||
+  "http://localhost:3001/assets/bg-custom.jpg";
 
 function normalizeLocalRepoPath(source: string) {
   const text = (source || "").trim();
-  if (!text || isLikelyRemoteRepo(text)) return "";
+  if (!text) return "";
   return text.startsWith("local://") ? text.slice("local://".length) : text;
 }
 
@@ -60,12 +61,12 @@ function StartPanel({
       <div className="mt-3 grid gap-3">
         <input
           className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 dark:border-zinc-800 dark:bg-zinc-950"
-          placeholder="GitHub URL or local path (e.g. https://github.com/owner/repo or D:\\projects\\my-tool)"
+          placeholder="local path(D:\\projects\\my-tool)"
           value={repoUrl}
           onChange={(e) => setRepoUrl(e.target.value)}
         />
         <div className="text-[11px] text-zinc-500">
-          支持远程仓库和本地目录。输入本地目录时，可一键在该目录生成 <code>.aui-dashboard</code>。
+          支持本地目录。输入本地目录时，可一键在该目录生成 <code>.aui-dashboard</code>。
         </div>
         <input
           className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-400 dark:border-zinc-800 dark:bg-zinc-950"
@@ -205,11 +206,15 @@ export default function Home() {
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const savedUrl = window.localStorage.getItem(DASHBOARD_BG_URL_STORAGE_KEY);
+      const savedUrl =
+        window.localStorage.getItem(DASHBOARD_BG_URL_STORAGE_KEY) ??
+        window.localStorage.getItem(LEGACY_BG_URL_STORAGE_KEY);
       if (savedUrl !== null) {
         setDashboardBgUrl(savedUrl);
       }
-      const savedOpacity = window.localStorage.getItem(DASHBOARD_BG_OPACITY_STORAGE_KEY);
+      const savedOpacity =
+        window.localStorage.getItem(DASHBOARD_BG_OPACITY_STORAGE_KEY) ??
+        window.localStorage.getItem(LEGACY_BG_OPACITY_STORAGE_KEY);
       if (savedOpacity !== null) {
         const parsed = Number(savedOpacity);
         if (Number.isFinite(parsed)) {
@@ -236,12 +241,16 @@ export default function Home() {
     setTimeout(() => setToast(null), timeoutMs);
   }, []);
 
-  const showRateLimitToast = React.useCallback((detail: string) => {
-    const lower = detail.toLowerCase();
-    if (detail.includes("GitHub API") || detail.includes("限流") || lower.includes("rate limit")) {
-      showToast("检测到 GitHub API 限流，请在设置中配置 GITHUB_TOKEN。");
-    }
-  }, [showToast]);
+  const showRateLimitToast = React.useCallback(
+    (detail: string) => {
+      const lower = String(detail || "").toLowerCase();
+      if (detail.includes("限流") || lower.includes("rate limit") || lower.includes("too many requests")) {
+        showToast("请求频率受限，请稍后重试。");
+      }
+    },
+    [showToast]
+  );
+
 
   const scrollToRenderPanel = React.useCallback(() => {
     renderPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -431,7 +440,7 @@ export default function Home() {
     const targetRoot = bridgeTargetProjectRoot.trim() || targetProjectRoot.trim() || resolvedLocalProjectRoot.trim();
     const launchOverride = bridgeLaunchCommand.trim();
     if (!targetRoot && !isLocalSource) {
-      showToast("请先填写 Bridge 目标项目根目录（远程 GitHub 项目必填）。");
+      showToast("请先填写 Bridge 目标项目根目录。");
       return;
     }
     if (syncLogicOnly && (!sidecarStatus?.sidecar_exists || !sidecarStatus?.protocol_exists)) {
@@ -482,7 +491,7 @@ export default function Home() {
     const targetRoot = bridgeTargetProjectRoot.trim() || targetProjectRoot.trim() || resolvedLocalProjectRoot.trim();
     const launchOverride = bridgeLaunchCommand.trim();
     if (!targetRoot && !isLocalSource) {
-      showToast("远程项目请先填写目标项目根目录后再重新扫描。");
+      showToast("填写目标项目根目录后再重新扫描。");
       return;
     }
     setIsBridgeRescanning(true);
@@ -629,7 +638,7 @@ export default function Home() {
 
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="mb-6">
-          <div className="text-xs font-medium text-zinc-500">AUI-Dashboard</div>
+          <div className="text-xs font-medium text-zinc-500">CortxUI</div>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">智能控制台</h1>
           <div className="mt-3 rounded-xl border bg-white/75 p-3 text-xs shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/50">
             <div className="font-medium text-zinc-600 dark:text-zinc-200">Dashboard Background</div>
@@ -854,11 +863,6 @@ export default function Home() {
                   <div className="mt-1 text-[11px] text-zinc-500">
                     将写入: {"<project-root>/.aui-dashboard/bridge"}（不会修改项目原文件）
                   </div>
-                  {isLocalSource ? (
-                    <div className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-300">
-                      本地项目模式：可直接一键生成到 {resolvedLocalProjectRoot || "(本地目录)"}。
-                    </div>
-                  ) : null}
                   <div className="mt-1 text-[11px] text-zinc-500">
                     {isSidecarChecking
                       ? "检测目标 sidecar 中..."

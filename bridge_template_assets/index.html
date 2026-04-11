@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AIUI Realtime Console</title>
+  <title>CortxUI Realtime Console</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
   <style>
     :root {
@@ -485,7 +485,7 @@
 <body>
   <div class="page">
     <div class="card">
-      <div class="title">AIUI Realtime Bridge Console</div>
+      <div class="title">CortxUI Realtime Bridge Console</div>
       <div class="muted">Terminal &lt;-&gt; WebSocket &lt;-&gt; JSON UI state</div>
       <div class="row" style="margin-top:10px;">
         <span id="connChip" class="chip warn">Connecting...</span>
@@ -625,6 +625,7 @@
       forceCurrentStageLabel: '',
       debugEnabled:
         new URLSearchParams(window.location.search).get('debug') === '1' ||
+        window.localStorage.getItem('cortxui_debug') === '1' ||
         window.localStorage.getItem('aiui_debug') === '1',
     };
 

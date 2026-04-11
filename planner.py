@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any, Dict
-
+from typing import Any, Dict,Optional
 from github_reader import fetch_repo_context
 from llm_factory import get_chat_llm
 from schemas import Plan, PlanRequest, Step
@@ -72,17 +71,17 @@ def _get_llm():
     return get_chat_llm()
 
 
-def generate_steps_from_repo(req: PlanRequest) -> Plan:
+def generate_steps_from_repo(req: PlanRequest,repo_ctx: Optional[Dict[str, Any]] = None) -> Plan:
     """
-    MVP Step 1: Repository source (GitHub URL or local path) -> steps for a status bar.
+    MVP Step 1: Repository source (local path) -> steps for a status bar.
     """
-    repo_ctx = fetch_repo_context(req.repo_url)
+    repo_ctx = repo_ctx if repo_ctx is not None else fetch_repo_context(req.repo_url)
 
     llm = _get_llm()
 
     system_prompt = (
         "你是“项目任务分解器”。"
-        "你的任务是把一个代码仓库（GitHub 或本地目录）的目标拆成 4-8 个步骤，用于前端状态栏展示。"
+        "你的任务是把一个代码仓库（本地目录）的目标拆成 4-8 个步骤，用于前端状态栏展示。"
         "你必须只输出一个 JSON 对象，且该 JSON 必须符合我提供的 schema（禁止输出任何额外文字）。\n"
         "schema:\n"
         "{\n"

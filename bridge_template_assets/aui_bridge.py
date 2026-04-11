@@ -460,7 +460,7 @@ def _stdin_forwarder_thread(
 
 
 async def _async_main() -> int:
-    parser = argparse.ArgumentParser(description="AIUI bridge launcher")
+    parser = argparse.ArgumentParser(description="CortxUI bridge launcher")
     parser.add_argument("--set", action="append", default=[], help="override launch flags, format key=value")
     parser.add_argument("--stdin-text", default="", help="optional stdin text sent after process start")
     parser.add_argument("--hook-url", default="", help="optional dashboard callback URL")

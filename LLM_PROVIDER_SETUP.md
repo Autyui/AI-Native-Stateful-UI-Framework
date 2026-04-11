@@ -1,11 +1,11 @@
 # LLM Provider Setup (GPT / Gemini / DeepSeek)
 
-本文档用于本地运行 AUI-Dashboard 时配置模型提供商。
+本文档用于本地运行 CortxUI 时配置模型提供商。
 
 ## 1. 先安装基础依赖
 
 ```powershell
-cd "D:\agent\AI-Native Stateful UI Framework"
+cd "D:\agent\CortxUI"
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
@@ -90,7 +90,7 @@ CODEX_MODEL=gpt-5.3-codex
 ### 后端
 
 ```powershell
-cd "D:\agent\AI-Native Stateful UI Framework"
+cd "D:\agent\CortxUI"
 .\venv\Scripts\Activate.ps1
 uvicorn app:app --reload --port 8000
 ```
@@ -98,7 +98,7 @@ uvicorn app:app --reload --port 8000
 ### 前端
 
 ```powershell
-cd "D:\agent\AI-Native Stateful UI Framework\frontend"
+cd "D:\agent\CortxUI\frontend"
 npm run dev
 ```
 
@@ -115,7 +115,7 @@ curl http://127.0.0.1:8000/health
 ```powershell
 curl -X POST "http://127.0.0.1:8000/run" `
   -H "Content-Type: application/json" `
-  -d "{\"repo_url\":\"D:\\agent\\AI-Native Stateful UI Framework\",\"user_notes\":\"请优先读取 AUI_DASHBOARD_PROGRESS.md 并生成可回溯 UI 步骤\",\"max_steps\":1}"
+  -d "{\"repo_url\":\"D:\\agent\\CortxUI\",\"user_notes\":\"请优先读取 AUI_DASHBOARD_PROGRESS.md 并生成可回溯 UI 步骤\",\"max_steps\":1}"
 ```
 
 ### 运行（GitHub URL）

@@ -35,9 +35,9 @@ INDEX_PATH = UI_DIR / "index.html"
 # 使用 r"" 原始字符串防止转义，或者使用正斜杠
 BASE_DIR = Path(__file__).resolve().parent
 # 指向你指定的 assets 目录
-ASSETS_DIR = Path(r".\AI-Native Stateful UI Framework\bridge_template_assets\assets")
+ASSETS_DIR = BASE_DIR / "assets"
 
-app = FastAPI(title="AIUI Real-time Runner", version="3")
+app = FastAPI(title="CortxUI Real-time Runner", version="3")
 
 # 确保目录存在并挂载
 if ASSETS_DIR.exists():
@@ -57,7 +57,7 @@ from aui_bridge import (  # type: ignore  # noqa: E402
 )
 
 
-app = FastAPI(title="AIUI Real-time Runner", version="3")
+app = FastAPI(title="CortxUI Real-time Runner", version="3")
 if ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
@@ -1810,7 +1810,7 @@ async def health() -> Dict[str, Any]:
 async def index() -> Any:
     if INDEX_PATH.exists():
         return FileResponse(str(INDEX_PATH))
-    return JSONResponse({"ok": True, "message": "AIUI WebSocket runner is ready.", "ws": "/ws/bridge"})
+    return JSONResponse({"ok": True, "message": "CortxUI WebSocket runner is ready.", "ws": "/ws/bridge"})
 
 
 async def _receive_json_or_text(ws: WebSocket) -> Dict[str, Any]:
@@ -1921,14 +1921,14 @@ async def ws_bridge(ws: WebSocket) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run AIUI real-time websocket dashboard")
+    parser = argparse.ArgumentParser(description="Run CortxUI real-time websocket dashboard")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--no-open", action="store_true")
     args = parser.parse_args()
 
     url = f"http://{args.host}:{args.port}"
-    print(f"[AIUI-WS] serving on {url}")
+    print(f"[CortxUI-WS] serving on {url}")
     if not args.no_open:
         try:
             webbrowser.open(url)
